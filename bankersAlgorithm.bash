@@ -10,16 +10,19 @@ start(){
     echo "There is $numResources resource(s)"
     #Initialise arrays
     declare -a totalAvail
+    declare -a currentAvailable
     declare -A allocated
     declare -A maxNeed
-    need=()
+    declare -A needs
     #Get Total available resources
     getTotalAvail
+    #Get the maximum resources needed for each processor
+    getMaxNeed
     #Get allocated resources for each processor
     getAllocated
-    #Get the maximum need for each processor
-    getMaxNeed
-    #Display essential data to obtain the resources needed and available resources
+    #Get the needs for each processor
+    getNeeds
+    #Display essential existent data 
     getFirstTable
 }
 getProcessors(){
@@ -65,30 +68,6 @@ fillTotalAvailResource(){
         fillTotalAvailResource
     fi
 }
-getAllocated(){
-    #2-D Array with allocated resources of each processor
-    echo "Enter the allocated resources of each processor:"
-    for (( i=0; i<$numProcessors; i++ )); do 
-        printf "PROCESSOR $((i+1))\n"
-        for (( j=0; j<$numResources; j++ )); do 
-            printf "Resource $((j+1)) " 
-            fillAllocResource
-            allocated[$i,$j]=$allocResValue
-        done
-    done
-    return $allocated
-}
-fillAllocResource(){
-    #Allocated resources input check
-    read -p "Enter allocated value: " allocResValue
-    if [ -z $allocResValue ]; then 
-        fillAllocResource
-    elif [ $allocResValue -ge 0 ] && [ $allocResValue -le 9999 ]; then
-        return $allocResValue
-    else
-        fillAllocResource
-    fi
-}
 getMaxNeed(){
     #2-D Array with max need of resources of each processor
     echo "Enter the max need of resources of each processor:"
@@ -113,11 +92,53 @@ fillMaxNeedResource(){
         fillMaxNeedResource
     fi
 }
+getAllocated(){
+    #2-D Array with allocated resources of each processor
+    echo "Enter the allocated resources of each processor:"
+    for (( i=0; i<$numProcessors; i++ )); do 
+        printf "PROCESSOR $((i+1))\n"
+        for (( j=0; j<$numResources; j++ )); do 
+            printf "Resource $((j+1)) " 
+            fillAllocResource
+            allocated[$i,$j]=$allocResValue
+        done
+    done
+    return $allocated
+}
+fillAllocResource(){
+    #Allocated resources input check
+    read -p "Enter allocated value: " allocResValue
+    if [ -z $allocResValue ]; then 
+        fillAllocResource
+    elif [ $allocResValue -ge 0 ] && [ $allocResValue -le 9999 ]; then
+        if [ ${maxNeed[$i,$j]} -ge $allocResValue ]; then
+            return $allocResValue
+        else 
+            printf "Allocated value can't be higher than the maximum need value, try again.\n"
+            fillAllocResource
+        fi
+    else
+        fillAllocResource
+    fi
+}
+getNeeds(){
+    #2-D Array with the needs of resources of each processor
+    for (( i=0; i<$numProcessors; i++ )); do
+        for (( j=0; j<$numResources; j++ )); do
+            needs[$i,$j]=$(( ${maxNeed[$i,$j]} - ${allocated[$i,$j]} ))
+            if [ ${needs[$i,$j]} -lt 0 ]; then 
+                printf "\nCheck the values of maximum need and allocated resources.\nMAX NEED - ALLOCATED = NEEDS\nNEEDS has to be greater or equal to 0\nStart again with the right values"
+                exit 0
+            fi
+        done
+    done
+    return $needs
+}
 getFirstTable(){
     printf "||TOTAL AVAILABLE RESOURCES: ${totalAvail[*]}||\n"
-    printf "||%-12s||%-$(($numResources*5))s||%-$(($numResources*5))s||" "PROCESSOR(S)" "ALLOCATED" "MAX NEED"
+    printf "||%-12s||%-$(($numResources*5))s||%-$(($numResources*5))s||%-$(($numResources*5))s||\n" "PROCESSOR(S)" "ALLOCATED" "MAX NEED" "NEEDS"
     for (( i=0; i<$numProcessors; i++ )); do 
-        printf "\n||%-12s||" "P$((i+1))"
+        printf "||%-12s||" "P$((i+1))"
         for (( j=0; j<$numResources; j++ )); do  
             printf "%-5s" "${allocated[$i,$j]}"
         done
@@ -126,6 +147,11 @@ getFirstTable(){
             printf "%-5s" "${maxNeed[$i,$j]}"
         done
         printf "||"
+        for (( j=0; j<$numResources; j++ )); do
+            printf "%-5s" "${needs[$i,$j]}"
+        done
+        printf "||\n"
     done
 }
+
 start
