@@ -166,62 +166,38 @@ getFirstTable(){
 safetyAlgorithm(){
     i=0
     count=0
-    # for (( l=0; l<$numResources; l++)); do
-    #     work[0,$l]=${allocated[0,$l]}
-    # done
-    # while [ $count -lt $numProcessors ]; do
-    #     for (( k=0; k<$numProcessors; k++)); do
-    #         printf "P$k\n"
-    #         for (( l=0; l<$numResources; l++)); do 
-    #             if [ ${available[$k,$l]} -ge ${needs[$k,$l]} ]; then 
-    #                 printf "Yes"
-    #                 work[$l]=1
-    #             else 
-    #                 printf "No"
-    #                 work[$l]=0
-    #             fi
-    #         done 
-    #         printf "\n"
-    #         if [ ${work[*]} -eq 1 ]; then
-    #             echo "Executable"
-    #             count+=1
-    #         fi
-    #     done 
-        # if [ "${finish[$i]}" -eq 0 ] && [ $(resourceCheck) -eq 1 ]; then
-        #     for (( j=0; j<$numResources; j++ )); do 
-        #         work[$j]=$((${work[$j]} + ${allocated[$i,$j]}))
-        #     done
-        #     finish[$i]=1
-        #     echo "${finish[$i]} line 175" 
-        #     safeSequence+=("P$i")
-        #     count+=1
-        # else 
-        #     echo "Next processor"
-        #     (( $count-1 ))
-        # fi
-        # (( i=( $i+1 ) % $numProcessors ))
-        # echo "line 180"
-#     done
-#     if [ $count -eq $numProcessors ];then 
-#         echo "System is in a safe state"
-#         echo "Safe sequence: ${safeSequence[*]}"
-#     else 
-#         echo "System is in an unsafe state"
-#     fi 
-
+    for (( j=0; j<$numResources; j++ )); do
+        work[$j]=${available[$j]}
+    done
+    while [ $count -lt $numProcessors ]; do
+        if [ ${finish[$i]} -eq 0 ] && [ "$(resourceCheck)" -eq 0 ] ; then
+            for (( j=0; j<$numResources; j++)); do
+                work[$j]=$((${work[$j]} + ${allocated[$i,$j]}))
+            done
+            finish[$i]=1
+            safeSequence+=("P$((i+1))")
+            ((count++))
+        fi
+        (( i = (i + 1) % $numProcessors ))
+    done
+    if [ $count -eq $numProcessors ]; then
+        printf "System is in a safe state\n"
+        printf "Safe Sequence: ${safeSequence[*]}\n"
+    else
+        printf "System is in an unsafe state\n"
+    fi
 }
-# resourceCheck(){
-#     extraCheck=0
-#     # for (( j=0; j<$numResources; j++ )); do
-#         if [ ${needs[$i,$j]} -le ${work[$j]} ]; then
-#             extraCheck+=1
-#             printf "HELLO\n"
-#         fi
-#     # done
-#     if [ $extraCheck -eq $numResources ]; then 
-#         return 1
-#     else
-#         return 0
-#     fi
-# }
+resourceCheck(){
+    checkedResource=0
+    for (( j=0; j<$numResources; j++ )); do
+        if [ ${needs[$i,$j]} -le ${work[$j]} ]; then
+            ((checkedResource++))
+        fi
+    done
+    if [ $checkedResource -eq $numResources ]; then 
+        echo 0
+    else
+        echo 1
+    fi
+}
 start
