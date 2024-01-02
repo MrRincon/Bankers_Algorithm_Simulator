@@ -10,7 +10,9 @@ start(){
     getResources
     echo "There is $numResources resource(s)"
     # Initialise arrays
-    declare -a available
+    declare -a totalAvailable
+    declare -a currentAvailable
+    declare -a checkAllocated
     declare -A allocated
     declare -A maxNeed
     declare -A needs
@@ -20,18 +22,20 @@ start(){
     for (( i=0; i<$numProcessors; i++)); do
         finish[$i]=0
     done
-    # declare -a finish
-    # declare -a safe
     # Get the maximum resources needed for each processor
     getMaxNeed
     # Get allocated resources for each processor
     getAllocated
     # Get the needs for each processor
     getNeeds
-    # Get available resources
-    getAvailable
+    #Get the current available resources
+    getCurrentAvailable
+    # Get total available resources
+    getTotalAvailable
     # Display essential existent data 
     getFirstTable
+    #Get the request from the user
+    # getProcessorRequest
     # Initialise safety algorithm
     safetyAlgorithm
 }
@@ -55,27 +59,6 @@ getResources(){
         return $numResources
     else 
         getResources
-    fi
-}
-getAvailable(){
-    # 1-D Array with available resources
-    echo "Enter the available resources: "
-    for (( i=0; i<$numResources; i++ )); do
-        printf "Resource $((i+1)) " 
-        fillAvailResource
-        available[$i]=$AvailResValue
-    done
-    return $available
-}
-fillAvailResource(){
-    # Available resources input check
-    read -p "Enter available value: " AvailResValue 
-    if [ -z $AvailResValue ]; then 
-        fillAvailResource
-    elif [ $AvailResValue -ge 0 ] && [ $AvailResValue -le 9999 ]; then 
-        return $AvailResValue
-    else
-        fillAvailResource
     fi
 }
 getMaxNeed(){
@@ -122,6 +105,7 @@ fillAllocResource(){
         fillAllocResource
     elif [ $allocResValue -ge 0 ] && [ $allocResValue -le 9999 ]; then
         if [ ${maxNeed[$i,$j]} -ge $allocResValue ]; then
+            checkAllocated[$j]=$((${checkAllocated[$j]} + allocResValue))
             return $allocResValue
         else 
             printf "Allocated value can't be higher than the maximum need value, try again.\n"
@@ -136,16 +120,41 @@ getNeeds(){
     for (( i=0; i<$numProcessors; i++ )); do
         for (( j=0; j<$numResources; j++ )); do
             needs[$i,$j]=$(( ${maxNeed[$i,$j]} - ${allocated[$i,$j]} ))
-            if [ ${needs[$i,$j]} -lt 0 ]; then 
-                printf "\nCheck the values of maximum need and allocated resources.\nMAX NEED - ALLOCATED = NEEDS\nNEEDS has to be greater or equal to 0\nStart again with the right values"
-                exit 0
-            fi
         done
     done
     return $needs
 }
+getCurrentAvailable(){
+    # 1-D array with Currently Available resources
+    echo "Enter the currently available resources: "
+    for (( i=0; i<$numResources; i++ )); do 
+        printf "Resource $((i+1)) "
+        fillCurrentAvailable
+        currentAvailable[$i]=$cuAvailResValue
+    done
+    return $currentAvailable
+}
+fillCurrentAvailable(){
+    # Current available resources input check
+    read -p "Enter current available value: " cuAvailResValue
+    if [ -z $cuAvailResValue ]; then 
+        fillCurrentAvailable
+    elif [ $cuAvailResValue -ge 0 ] && [ $cuAvailResValue -le 9999 ]; then 
+        return $cuAvailResValue
+    else
+        fillCurrentAvailable
+    fi
+}
+getTotalAvailable(){
+    # 1-D Array with total available resources
+    for (( i=0; i<$numResources; i++ )); do
+        totalAvailable[$i]=$(( ${checkAllocated[$i]}+${currentAvailable[$i]} ))
+    done
+    return $totalAvailable
+}
 getFirstTable(){
-    printf "||AVAILABLE RESOURCES: ${available[*]}||\n"
+    printf "||TOTAL AVAILABLE RESOURCES: ${totalAvailable[*]}||\n"
+    printf "||CURRENTLY AVAILABLE:       ${currentAvailable[*]}||\n"
     printf "||%-12s||%-$(($numResources*5))s||%-$(($numResources*5))s||%-$(($numResources*5))s||\n" "PROCESSOR(S)" "ALLOCATED" "MAX NEED" "NEEDS"
     for (( i=0; i<$numProcessors; i++ )); do 
         printf "||%-12s||" "P$((i+1))"
@@ -163,11 +172,14 @@ getFirstTable(){
         printf "||\n"
     done
 }
+# getProcessorRequest(){
+
+# }
 safetyAlgorithm(){
     i=0
     count=0
     for (( j=0; j<$numResources; j++ )); do
-        work[$j]=${available[$j]}
+        work[$j]=${currentAvailable[$j]}
     done
     while [ $count -lt $numProcessors ]; do
         if [ ${finish[$i]} -eq 0 ] && [ "$(resourceCheck)" -eq 0 ] ; then
