@@ -224,6 +224,19 @@ resourceCheck(){
         echo 1
     fi
 }
+checkIfCuAvail(){
+    checkIfAvail=0
+    for (( j=0; j<$numResources; j++)); do
+        if [ ${currentAvailable[$j]} -eq 0 ]; then
+            ((checkIfAvail++))
+        fi
+    done
+    if [ $checkIfAvail -eq $numResources ]; then 
+        echo 0
+    else 
+        echo 1
+    fi
+}
 getNewRequest(){
     # New Request input checks for processor selection
     read -p "Enter the Processor for a new request: " pNewRequest
@@ -238,8 +251,15 @@ getNewRequest(){
         # Check if it is safe or unsafe to grant the request
         if [ $(safetyAlgorithm) -eq 0 ]; then 
             printf "Request Granted. System is in a safe state\n"
-            # Keep looping the new request function for future requests.
-            getNewRequest
+            #Check if there is any resources available before letting the user request more.
+            if [ $(checkIfCuAvail) -eq 0 ]; then
+                printf "There is no resources available to grant more requests"
+                exit 0
+            else
+                # Keep looping the new request function for future requests.
+                getNewRequest
+            fi
+            
         else
             # Exit the program if unsafe
             printf "Request not granted. System is in an unsafe state\n"
