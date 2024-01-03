@@ -178,10 +178,11 @@ getFirstTable(){
 safetyAlgorithm(){
     i=0
     count=0
+    x=0
     for (( j=0; j<$numResources; j++ )); do
         work[$j]=${currentAvailable[$j]}
     done
-    while [ $count -lt $numProcessors ]; do
+    while [ $x -lt $(($numProcessors*$numProcessors)) ]; do
         if [ ${finish[$i]} -eq 0 ] && [ "$(resourceCheck)" -eq 0 ] ; then
             for (( j=0; j<$numResources; j++)); do
                 work[$j]=$((${work[$j]} + ${allocated[$i,$j]}))
@@ -190,6 +191,7 @@ safetyAlgorithm(){
             safeSequence+=("P$((i+1))")
             ((count++))
         fi
+        ((x++))
         (( i = (i + 1) % $numProcessors ))
     done
     if [ $count -eq $numProcessors ]; then
