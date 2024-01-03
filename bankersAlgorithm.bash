@@ -187,14 +187,14 @@ safetyAlgorithm(){
     for (( j=0; j<$numResources; j++ )); do
         work[$j]=${currentAvailable[$j]}
     done
-    # Loop through x until x is equal to the (amount of processor * 2) to avoid an endless loop
+    # Loop through x until x is equal to the (amount of processors * amount of processors) to avoid an endless loop
     while [ $x -lt $(($numProcessors*$numProcessors)) ]; do
-        # Check for values in the finish array to see if any is equal to 0 and that a function returns 0
+        # Check for values in the finish array to see if any is equal to 0, and that a check function returns 0
         if [ ${finish[$i]} -eq 0 ] && [ "$(resourceCheck)" -eq 0 ] ; then
             for (( j=0; j<$numResources; j++)); do
                 work[$j]=$((${work[$j]} + ${allocated[$i,$j]}))
             done
-            # If the checks are true assign the finish of that processor to 1 and then increment the count
+            # If the checks are true assign the finish value of that processor to 1 and then increment the count
             finish[$i]=1
             ((count++))
         fi
@@ -224,6 +224,7 @@ resourceCheck(){
     fi
 }
 checkIfCuAvail(){
+    # Check if there is any resources left in the currently available to allow future requests
     checkIfAvail=0
     for (( j=0; j<$numResources; j++)); do
         if [ ${currentAvailable[$j]} -eq 0 ]; then
@@ -237,7 +238,7 @@ checkIfCuAvail(){
     fi
 }
 getNewRequest(){
-    # New Request input checks for processor selection
+    # New Request input checks for the processor selection
     read -p "Enter the Processor for a new request: " pNewRequest
     if [ -z $pNewRequest ]; then 
         getNewRequest
@@ -250,7 +251,7 @@ getNewRequest(){
         # Check if it is safe or unsafe to grant the request
         if [ $(safetyAlgorithm) -eq 0 ]; then 
             printf "Request Granted. System is in a safe state\n"
-            #Check if there is any resources available before letting the user request more.
+            # Check if there is any resources available before letting the user request more.
             if [ $(checkIfCuAvail) -eq 0 ]; then
                 printf "There is no resources available to grant more requests"
                 exit 0
