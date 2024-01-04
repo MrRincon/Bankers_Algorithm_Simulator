@@ -1,5 +1,4 @@
 #!/bin/bash
-# CST2555 Coursework 1 - M00774667 - Alam Rincon Rodrigues
 # Simulation of Bankers algorithm for Deadlock Avoidance using Bash.
 start(){
     # Get processors
