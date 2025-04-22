@@ -1,5 +1,4 @@
-# CST2555---Coursework1
-CST2555 - Coursework 1 (Simulation of Banker's Algorithm for Deadlock Avoidance using C++ or Bash) 
+# Simulation of Banker's Algorithm for Deadlock Avoidance using C++ or Bash
 
 THEORY
 Banker's algorithm is a deadlock avoidance algorithm. It is named so because this algorithm
