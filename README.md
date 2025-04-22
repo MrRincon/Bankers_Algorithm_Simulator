@@ -1,4 +1,4 @@
-# Simulation of Banker's Algorithm for Deadlock Avoidance using C++ or Bash
+# Simulation of Banker's Algorithm for Deadlock Avoidance using Bash
 
 THEORY
 Banker's algorithm is a deadlock avoidance algorithm. It is named so because this algorithm
